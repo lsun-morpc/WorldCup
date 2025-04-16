@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cup Knockout Stage</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #8b1538;
+            padding: 20px;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #8b1538;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .team-input {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            width: 100%;
+        }
+
+        .team-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .start-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #ffd700;
+            color: #8b1538;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .start-button:hover {
+            background: #ffed4a;
+        }
+
+        .go-back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            z-index: 1000;
+        }
+
+        .go-back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .export-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 215, 0, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            z-index: 1000;
+        }
+
+        .export-button:hover {
+            background: rgba(255, 215, 0, 0.3);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .bracket-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 40px 0;
+            background-color: #8b1538;
+            padding: 40px;
+            border-radius: 8px;
+        }
+
+        .trophy {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            z-index: 10;
+        }
+
+        .trophy::before {
+            content: '🏆';
+        }
+
+        .bracket {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 80px;
+            margin: 0 auto;
+            max-width: 1200px;
+        }
+
+        .round {
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+            position: relative;
+        }
+
+        .round.left {
+            align-items: flex-end;
+        }
+
+        .round.right {
+            align-items: flex-start;
+        }
+
+        .match {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            width: 200px;
+            position: relative;
+            z-index: 2;
+            padding: 4px;
+        }
+
+        .team {
+            padding: 8px;
+            margin: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .team:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .team.winner {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: #ffd700;
+            font-weight: bold;
+        }
+
+        .team.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .team img {
+            width: 24px;
+            height: 16px;
+            object-fit: cover;
+            border-radius: 2px;
+            background-color: white;
+        }
+
+        .round-label {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .sunburst {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,215,0,0.2) 0%, rgba(255,215,0,0) 70%);
+            z-index: 1;
+        }
+
+        .connector {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+
+        .connector-h {
+            height: 2px;
+        }
+
+        .connector-v {
+            width: 2px;
+        }
+
+        .round.left .match::after,
+        .round.right .match::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 30px;
+        }
+
+        .round.left .match::after {
+            right: -30px;
+        }
+
+        .round.right .match::after {
+            left: -30px;
+        }
+
+        .champion-name {
+            position: absolute;
+            left: 50%;
+            top: calc(50% + 70px);
+            transform: translateX(-50%);
+            text-align: center;
+            color: #ffd700;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            z-index: 11;
+        }
+
+        .match-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .team-input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .country-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: #8b1538;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .country-suggestion {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .country-suggestion:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .country-suggestion img {
+            width: 24px;
+            height: 16px;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal" id="setupModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; text-align: center;">Enter Teams for Round of 16</h2>
+            <div class="teams-grid">
+                <div>
+                    <label>Match 1 - Left</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 1" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 2" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 5 - Right</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 9" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 10" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 2 - Left</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 3" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 4" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 6 - Right</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 11" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 12" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 3 - Left</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 5" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 6" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 7 - Right</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 13" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 14" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 4 - Left</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 7" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 8" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>Match 8 - Right</label>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 15" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                    <div class="team-input-container">
+                        <input type="text" class="team-input" placeholder="Team 16" oninput="handleCountryInput(this)">
+                        <div class="country-suggestions"></div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-button" onclick="startTournament()">Start Tournament</button>
+        </div>
+    </div>
+
+    <button class="go-back-button hidden" onclick="goBack()">← Edit Teams</button>
+    <button class="export-button hidden" onclick="exportDiagram()">Export Diagram</button>
+
+    <div class="container">
+        <h1>World Cup Knockout Stage</h1>
+        
+        <div class="bracket-container">
+            <div class="sunburst"></div>
+            <div class="trophy"></div>
+            <div class="champion-name" id="champion"></div>
+            
+            <div class="bracket">
+                <!-- Left side -->
+                <div class="round left">
+                    <div class="round-label">Round of 16</div>
+                    <div class="match" data-match="1">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="2">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="3">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="4">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                </div>
+                
+                <div class="round left">
+                    <div class="round-label">Quarter Finals</div>
+                    <div class="match" data-match="9">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="10">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                </div>
+                
+                <div class="round left">
+                    <div class="round-label">Semi Finals</div>
+                    <div class="match" data-match="13">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                </div>
+
+                <!-- Right side -->
+                <div class="round right">
+                    <div class="round-label">Semi Finals</div>
+                    <div class="match" data-match="14">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                </div>
+                
+                <div class="round right">
+                    <div class="round-label">Quarter Finals</div>
+                    <div class="match" data-match="11">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="12">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                </div>
+                
+                <div class="round right">
+                    <div class="round-label">Round of 16</div>
+                    <div class="match" data-match="5">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="6">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="7">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                    <div class="match" data-match="8">
+                        <div class="team" onclick="selectWinner(this)"></div>
+                        <div class="team" onclick="selectWinner(this)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const matchWinners = {};
+
+        // Country data
+        const countries = {
+            "algeria": { name: "Algeria", code: "dz" },
+            "angola": { name: "Angola", code: "ao" },
+            "argentina": { name: "Argentina", code: "ar" },
+            "australia": { name: "Australia", code: "au" },
+            "austria": { name: "Austria", code: "at" },
+            "belgium": { name: "Belgium", code: "be" },
+            "bolivia": { name: "Bolivia", code: "bo" },
+            "brazil": { name: "Brazil", code: "br" },
+            "bulgaria": { name: "Bulgaria", code: "bg" },
+            "cameroon": { name: "Cameroon", code: "cm" },
+            "canada": { name: "Canada", code: "ca" },
+            "chile": { name: "Chile", code: "cl" },
+            "china": { name: "China PR", code: "cn" },
+            "colombia": { name: "Colombia", code: "co" },
+            "costarica": { name: "Costa Rica", code: "cr" },
+            "croatia": { name: "Croatia", code: "hr" },
+            "cuba": { name: "Cuba", code: "cu" },
+            "czechrepublic": { name: "Czech Republic", code: "cz" },
+            "denmark": { name: "Denmark", code: "dk" },
+            "ecuador": { name: "Ecuador", code: "ec" },
+            "egypt": { name: "Egypt", code: "eg" },
+            "elsalvador": { name: "El Salvador", code: "sv" },
+            "england": { name: "England", code: "gb-eng" },
+            "france": { name: "France", code: "fr" },
+            "germany": { name: "Germany", code: "de" },
+            "ghana": { name: "Ghana", code: "gh" },
+            "greece": { name: "Greece", code: "gr" },
+            "haiti": { name: "Haiti", code: "ht" },
+            "honduras": { name: "Honduras", code: "hn" },
+            "hungary": { name: "Hungary", code: "hu" },
+            "iceland": { name: "Iceland", code: "is" },
+            "iran": { name: "Iran", code: "ir" },
+            "iraq": { name: "Iraq", code: "iq" },
+            "ireland": { name: "Republic of Ireland", code: "ie" },
+            "israel": { name: "Israel", code: "il" },
+            "italy": { name: "Italy", code: "it" },
+            "ivorycoast": { name: "Ivory Coast", code: "ci" },
+            "jamaica": { name: "Jamaica", code: "jm" },
+            "japan": { name: "Japan", code: "jp" },
+            "mexico": { name: "Mexico", code: "mx" },
+            "morocco": { name: "Morocco", code: "ma" },
+            "netherlands": { name: "Netherlands", code: "nl" },
+            "newzealand": { name: "New Zealand", code: "nz" },
+            "nigeria": { name: "Nigeria", code: "ng" },
+            "northkorea": { name: "North Korea", code: "kp" },
+            "norway": { name: "Norway", code: "no" },
+            "panama": { name: "Panama", code: "pa" },
+            "paraguay": { name: "Paraguay", code: "py" },
+            "peru": { name: "Peru", code: "pe" },
+            "poland": { name: "Poland", code: "pl" },
+            "portugal": { name: "Portugal", code: "pt" },
+            "qatar": { name: "Qatar", code: "qa" },
+            "romania": { name: "Romania", code: "ro" },
+            "russia": { name: "Russia", code: "ru" },
+            "saudiarabia": { name: "Saudi Arabia", code: "sa" },
+            "scotland": { name: "Scotland", code: "gb-sct" },
+            "senegal": { name: "Senegal", code: "sn" },
+            "serbia": { name: "Serbia", code: "rs" },
+            "slovakia": { name: "Slovakia", code: "sk" },
+            "slovenia": { name: "Slovenia", code: "si" },
+            "southafrica": { name: "South Africa", code: "za" },
+            "southkorea": { name: "South Korea", code: "kr" },
+            "spain": { name: "Spain", code: "es" },
+            "sweden": { name: "Sweden", code: "se" },
+            "switzerland": { name: "Switzerland", code: "ch" },
+            "tunisia": { name: "Tunisia", code: "tn" },
+            "turkey": { name: "Turkey", code: "tr" },
+            "ukraine": { name: "Ukraine", code: "ua" },
+            "uruguay": { name: "Uruguay", code: "uy" },
+            "usa": { name: "United States", code: "us" },
+            "wales": { name: "Wales", code: "gb-wls" },
+            "yugoslavia": { name: "Yugoslavia", code: "yu" },
+            "zaire": { name: "Zaire", code: "zr" }
+        };
+
+        function handleCountryInput(input) {
+            const container = input.parentElement;
+            const suggestionsDiv = container.querySelector('.country-suggestions');
+            const searchTerm = input.value.toLowerCase();
+
+            if (searchTerm.length < 2) {
+                suggestionsDiv.innerHTML = '';
+                return;
+            }
+
+            const matches = Object.entries(countries).filter(([key, country]) =>
+                key.includes(searchTerm) || country.name.toLowerCase().includes(searchTerm)
+            );
+
+            suggestionsDiv.innerHTML = matches
+                .map(([key, country]) => `
+                    <div class="country-suggestion" onclick="selectCountry('${country.name}', '${country.code}', this)">
+                        <img src="https://flagcdn.com/w40/${country.code}.png" alt="${country.name} flag">
+                        ${country.name}
+                    </div>
+                `)
+                .join('');
+        }
+
+        function selectCountry(name, code, element) {
+            const container = element.closest('.team-input-container');
+            const input = container.querySelector('.team-input');
+            input.value = name;
+            container.querySelector('.country-suggestions').innerHTML = '';
+        }
+
+        function startTournament() {
+            const inputs = document.querySelectorAll('.team-input');
+            const teams = Array.from(inputs).map(input => input.value.trim());
+            
+            // Keep the modal visible and inputs enabled during validation
+            if (teams.some(team => !team)) {
+                alert('Please fill in all team names');
+                // Re-enable all inputs explicitly
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.pointerEvents = 'auto';
+                });
+                return;
+            }
+
+            // Check if all team names are valid countries
+            const invalidTeams = teams.filter(team => !getCountryCode(team));
+            if (invalidTeams.length > 0) {
+                alert('Please select valid countries from the dropdown suggestions for: ' + invalidTeams.join(', '));
+                // Re-enable all inputs explicitly
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.pointerEvents = 'auto';
+                });
+                return;
+            }
+
+            // Only proceed with hiding the modal and showing the bracket if all validations pass
+            // Populate Round of 16 matches with flags
+            const matches = document.querySelectorAll('.match[data-match]');
+            matches.forEach((match, index) => {
+                const matchId = parseInt(match.dataset.match);
+                const teamElements = match.querySelectorAll('.team');
+                
+                if (matchId <= 4 || (matchId >= 5 && matchId <= 8)) {
+                    const teamIndex = (matchId <= 4) ? 
+                        [(matchId - 1) * 2, (matchId - 1) * 2 + 1] :
+                        [(matchId - 1) * 2, (matchId - 1) * 2 + 1];
+
+                    teamElements.forEach((element, i) => {
+                        const teamName = teams[teamIndex[i]];
+                        const countryCode = getCountryCode(teamName);
+                        element.innerHTML = `<img src="https://flagcdn.com/w40/${countryCode}.png" alt="${teamName} flag"><span>${teamName}</span>`;
+                    });
+                }
+            });
+
+            // Hide modal and show buttons only after successful validation
+            document.getElementById('setupModal').style.display = 'none';
+            document.querySelector('.go-back-button').classList.remove('hidden');
+            document.querySelector('.export-button').classList.remove('hidden');
+        }
+
+        function getCountryCode(teamName) {
+            const country = Object.values(countries).find(c => 
+                c.name.toLowerCase() === teamName.toLowerCase()
+            );
+            return country ? country.code : null;
+        }
+
+        function exportDiagram() {
+            // Check if all matches have winners
+            const totalMatches = 14; // Total number of matches in the tournament
+            const completedMatches = Object.keys(matchWinners).length;
+            
+            if (completedMatches < totalMatches) {
+                alert('Please complete all matches before exporting. You still need to select winners for ' + 
+                      (totalMatches - completedMatches) + ' matches.');
+                return;
+            }
+
+            // Show loading state
+            const exportBtn = document.querySelector('.export-button');
+            const originalText = exportBtn.textContent;
+            exportBtn.textContent = 'Generating...';
+            exportBtn.disabled = true;
+
+            // Get the bracket container and its content
+            const bracketContainer = document.querySelector('.bracket-container');
+            const bracket = document.querySelector('.bracket');
+            
+            // Store original styles
+            const originalContainerStyle = {
+                width: bracketContainer.style.width,
+                height: bracketContainer.style.height,
+                padding: bracketContainer.style.padding,
+                position: bracketContainer.style.position,
+                overflow: bracketContainer.style.overflow,
+                display: bracketContainer.style.display,
+                alignItems: bracketContainer.style.alignItems,
+                justifyContent: bracketContainer.style.justifyContent
+            };
+            
+            const originalBracketStyle = {
+                width: bracket.style.width,
+                height: bracket.style.height,
+                transform: bracket.style.transform,
+                position: bracket.style.position,
+                display: bracket.style.display,
+                justifyContent: bracket.style.justifyContent,
+                gap: bracket.style.gap
+            };
+
+            // Set specific dimensions and styles for export
+            bracketContainer.style.width = '1440px';  // Match standard HD width
+            bracketContainer.style.height = '1080px'; // Match standard HD height
+            bracketContainer.style.padding = '40px';
+            bracketContainer.style.position = 'relative';
+            bracketContainer.style.overflow = 'visible';
+            bracketContainer.style.display = 'flex';
+            bracketContainer.style.alignItems = 'center';
+            bracketContainer.style.justifyContent = 'center';
+            
+            bracket.style.width = 'auto';
+            bracket.style.height = 'auto';
+            bracket.style.position = 'relative';
+            bracket.style.display = 'flex';
+            bracket.style.justifyContent = 'center';
+            bracket.style.gap = '60px'; // Reduced gap for better fit
+            bracket.style.transform = 'scale(0.95)'; // Slight scale down to ensure everything fits
+
+            // Adjust match sizes for better fit
+            const matches = bracketContainer.querySelectorAll('.match');
+            const originalMatchStyles = Array.from(matches).map(match => ({
+                element: match,
+                width: match.style.width,
+                padding: match.style.padding
+            }));
+            matches.forEach(match => {
+                match.style.width = '180px'; // Slightly smaller match boxes
+                match.style.padding = '3px'; // Slightly reduced padding
+            });
+
+            // Create a wrapper div for better positioning
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.top = '0';
+            wrapper.style.left = '0';
+            wrapper.style.width = '100%';
+            wrapper.style.height = '100%';
+            wrapper.style.backgroundColor = '#8b1538';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.zIndex = '9999';
+
+            // Clone the bracket container
+            const clonedContainer = bracketContainer.cloneNode(true);
+            wrapper.appendChild(clonedContainer);
+            document.body.appendChild(wrapper);
+
+            // Wait for all images to load
+            const images = Array.from(clonedContainer.getElementsByTagName('img'));
+            Promise.all(images.map(img => {
+                if (img.complete) {
+                    return Promise.resolve();
+                }
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            }))
+            .then(() => {
+                // Configure html2canvas with improved settings
+                html2canvas(clonedContainer, {
+                    backgroundColor: '#8b1538',
+                    scale: 1, // Reduced scale since we're using HD resolution
+                    useCORS: true,
+                    allowTaint: true,
+                    foreignObjectRendering: true,
+                    logging: false,
+                    width: 1440,
+                    height: 1080,
+                    onclone: (clonedDoc) => {
+                        // Ensure winner highlighting is visible in export
+                        const winners = clonedDoc.querySelectorAll('.winner');
+                        winners.forEach(winner => {
+                            winner.style.backgroundColor = 'rgba(255, 215, 0, 0.15)';
+                            winner.style.borderColor = '#ffd700';
+                        });
+                        
+                        // Ensure text is crisp
+                        const allText = clonedDoc.querySelectorAll('.team span, .round-label, .champion-name');
+                        allText.forEach(text => {
+                            text.style.textRendering = 'optimizeLegibility';
+                            text.style.fontSmooth = 'always';
+                        });
+
+                        // Ensure all elements are visible
+                        const allElements = clonedDoc.querySelectorAll('.match, .team, .round-label, .champion-name');
+                        allElements.forEach(el => {
+                            el.style.visibility = 'visible';
+                            el.style.display = 'block';
+                        });
+                    }
+                }).then(canvas => {
+                    // Remove the wrapper
+                    document.body.removeChild(wrapper);
+
+                    // Restore original styles
+                    Object.assign(bracketContainer.style, originalContainerStyle);
+                    Object.assign(bracket.style, originalBracketStyle);
+                    
+                    // Restore original match styles
+                    originalMatchStyles.forEach(({element, width, padding}) => {
+                        element.style.width = width;
+                        element.style.padding = padding;
+                    });
+
+                    // Convert to PNG with maximum quality
+                    canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'world-cup-bracket.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+
+                        // Reset button state
+                        exportBtn.textContent = originalText;
+                        exportBtn.disabled = false;
+                    }, 'image/png', 1.0);
+                });
+            });
+        }
+
+        function goBack() {
+            // Show modal and hide go back button
+            document.getElementById('setupModal').style.display = 'flex';
+            document.querySelector('.go-back-button').classList.add('hidden');
+            
+            // Clear all winner classes and disabled states
+            document.querySelectorAll('.team').forEach(team => {
+                team.classList.remove('winner', 'disabled');
+            });
+            
+            // Clear champion
+            document.getElementById('champion').textContent = '';
+            
+            // Reset match winners
+            Object.keys(matchWinners).forEach(key => delete matchWinners[key]);
+        }
+
+        function selectWinner(teamElement) {
+            const match = teamElement.parentElement;
+            const teams = match.querySelectorAll('.team');
+            const matchId = match.dataset.match;
+            
+            // Only allow selection if the team has a name
+            if (!teamElement.textContent.trim()) return;
+            
+            // Remove winner class from both teams
+            teams.forEach(team => {
+                team.classList.remove('winner');
+                team.classList.remove('disabled');
+            });
+            
+            // Add winner class to selected team
+            teamElement.classList.add('winner');
+            // Disable losing team
+            Array.from(teams).find(team => team !== teamElement).classList.add('disabled');
+            
+            // Store the winner
+            matchWinners[matchId] = teamElement.textContent;
+            
+            // Update next round
+            updateNextRound(matchId, teamElement.textContent);
+        }
+
+        function updateNextRound(currentMatchId, winnerName) {
+            currentMatchId = parseInt(currentMatchId);
+            let nextMatchId;
+            let position;
+
+            // Get the winning team's HTML content (including flag)
+            const currentMatch = document.querySelector(`[data-match="${currentMatchId}"]`);
+            const winningTeamElement = Array.from(currentMatch.querySelectorAll('.team'))
+                .find(team => team.classList.contains('winner'));
+            const winningTeamHTML = winningTeamElement.innerHTML;
+
+            // Determine next match and position
+            if (currentMatchId <= 4) {
+                nextMatchId = Math.ceil(currentMatchId / 2) + 8;
+                position = currentMatchId % 2 === 1 ? 0 : 1;
+            } else if (currentMatchId <= 8) {
+                nextMatchId = Math.ceil((currentMatchId - 4) / 2) + 10;
+                position = currentMatchId % 2 === 1 ? 0 : 1;
+            } else if (currentMatchId <= 12) {
+                nextMatchId = Math.ceil((currentMatchId - 8) / 2) + 12;
+                position = currentMatchId % 2 === 1 ? 0 : 1;
+            } else if (currentMatchId === 13 || currentMatchId === 14) {
+                // Update champion
+                if (matchWinners['13'] && matchWinners['14']) {
+                    const championElement = document.getElementById('champion');
+                    // Get the country code from the winning team's flag image
+                    const flagImg = winningTeamElement.querySelector('img');
+                    if (flagImg) {
+                        const countryCode = flagImg.src.split('/').pop().split('.')[0];
+                        championElement.innerHTML = `
+                            <img src="https://flagcdn.com/w40/${countryCode}.png" 
+                                 alt="${winnerName} flag" 
+                                 style="width: 32px; height: 20px; vertical-align: middle; margin-right: 8px;">
+                            <span>${winnerName}</span>
+                        `;
+                    } else {
+                        championElement.textContent = winnerName;
+                    }
+                }
+                return;
+            }
+
+            // Update next match
+            const nextMatch = document.querySelector(`[data-match="${nextMatchId}"]`);
+            if (nextMatch) {
+                const teams = nextMatch.querySelectorAll('.team');
+                // Copy the entire HTML content (including flag) to the next round
+                teams[position].innerHTML = winningTeamHTML;
+                // Reset classes for next round
+                teams.forEach(team => {
+                    team.classList.remove('winner', 'disabled');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
